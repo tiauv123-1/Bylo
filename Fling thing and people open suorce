@@ -1,0 +1,201 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/V5/Source.lua"))()
+
+local Window = Library:MakeWindow({
+    Name = "Khata Hub",
+    Theme = "Darker",
+    Size = UDim2.new(0, 550, 0, 380)
+})
+
+local Tab = Window:MakeTab({
+    Name = "Main",
+    Icon = "home"
+})
+
+Tab:AddButton({
+    Name = "Chưa nghĩ ra",
+    Callback = function()
+        print("Xin chào từ Khata Hub!")
+    end
+})
+
+Tab:AddToggle({
+    Name = "Auto Farm bonb(Dead raild)",
+    Default = false,
+    Callback = function(state)
+        _G.AutoFarm = state
+        if state then
+            spawn(function()
+                local player = game.Players.LocalPlayer
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local hum = char:WaitForChild("Humanoid")
+
+                player.CameraMode = "Classic"
+                player.CameraMaxZoomDistance = math.huge
+                player.CameraMinZoomDistance = 30
+                workspace.CurrentCamera.CameraSubject = hum
+
+                hrp.Anchored = true
+                task.wait(0.2)
+                hrp.CFrame = CFrame.new(80, 3, -9000)
+
+                repeat task.wait() until workspace.RuntimeItems:FindFirstChild("MaximGun")
+                task.wait(0.2)
+
+                for _,v in pairs(workspace.RuntimeItems:GetChildren()) do
+                    if v.Name == "MaximGun" and v:FindFirstChild("VehicleSeat") then
+                        v.VehicleSeat.Disabled = false
+                        v.VehicleSeat:SetAttribute("Disabled", false)
+                        v.VehicleSeat:Sit(hum)
+                    end
+                end
+
+                task.wait(0.2)
+                for _,v in pairs(workspace.RuntimeItems:GetChildren()) do
+                    if v.Name == "MaximGun" and v:FindFirstChild("VehicleSeat") and (hrp.Position - v.VehicleSeat.Position).Magnitude < 400 then
+                        hrp.CFrame = v.VehicleSeat.CFrame
+                    end
+                end
+
+                task.wait(0.5)
+                hrp.Anchored = false
+                repeat task.wait(0.1) until hum.Sit
+                task.wait(0.3)
+                hum.Sit = false
+                task.wait(0.2)
+
+                repeat
+                    for _,v in pairs(workspace.RuntimeItems:GetChildren()) do
+                        if not _G.AutoFarm then return end
+                        if v.Name == "MaximGun" and v:FindFirstChild("VehicleSeat") and (hrp.Position - v.VehicleSeat.Position).Magnitude < 400 then
+                            hrp.CFrame = v.VehicleSeat.CFrame
+                        end
+                    end
+                    task.wait(0.2)
+                until hum.Sit or not _G.AutoFarm
+                if not _G.AutoFarm then return end
+                task.wait(0.4)
+
+                for _,v in pairs(workspace:GetChildren()) do
+                    if not _G.AutoFarm then return end
+                    if v:IsA("Model") and v:FindFirstChild("RequiredComponents") then
+                        local seat = v.RequiredComponents:FindFirstChild("Controls")
+                            and v.RequiredComponents.Controls:FindFirstChild("ConductorSeat")
+                            and v.RequiredComponents.Controls.ConductorSeat:FindFirstChild("VehicleSeat")
+                        if seat then
+                            local tp = game.TweenService:Create(hrp, TweenInfo.new(15, Enum.EasingStyle.Quad), {CFrame = seat.CFrame * CFrame.new(0, 20, 0)})
+                            tp:Play()
+                            if not hrp:FindFirstChild("VelocityHandler") then
+                                local bv = Instance.new("BodyVelocity", hrp)
+                                bv.Name = "VelocityHandler"
+                                bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                                bv.Velocity = Vector3.zero
+                            end
+                            tp.Completed:Wait()
+                        end
+                    end
+                end
+
+                task.wait(0.5)
+                while _G.AutoFarm do
+                    if hum.Sit then
+                        local tp = game.TweenService:Create(hrp, TweenInfo.new(10, Enum.EasingStyle.Quad), {CFrame = CFrame.new(0.5, -78, -49429)})
+                        tp:Play()
+                        if not hrp:FindFirstChild("VelocityHandler") then
+                            local bv = Instance.new("BodyVelocity", hrp)
+                            bv.Name = "VelocityHandler"
+                            bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                            bv.Velocity = Vector3.zero
+                        end
+                        repeat task.wait() until workspace.RuntimeItems:FindFirstChild("Bond") or not _G.AutoFarm
+                        tp:Cancel()
+
+                        for _,v in pairs(workspace.RuntimeItems:GetChildren()) do
+                            if not _G.AutoFarm then return end
+                            if v.Name:find("Bond") and v:FindFirstChild("Part") then
+                                repeat
+                                    if not _G.AutoFarm then return end
+                                    if v:FindFirstChild("Part") then
+                                        hrp.CFrame = v.Part.CFrame
+                                        game.ReplicatedStorage.Shared.Network.RemotePromise.Remotes.C_ActivateObject:FireServer(v)
+                                    end
+                                    task.wait(0.1)
+                                until not v:FindFirstChild("Part") or not _G.AutoFarm
+                            end
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+Tab:AddSlider({
+    Name = "Sức mạnh ném (Fling Things and People)",
+    Min = 16,
+    Max = 10000,
+    Default = 100,
+    Callback = function(value)
+        local StrengthMultiplier = value
+        local Workspace = game:GetService("Workspace")
+        local Debris = game:GetService("Debris")
+        local Players = game:GetService("Players")
+        local player = Players.LocalPlayer
+
+        Workspace.ChildAdded:Connect(function(NewModel)
+            if NewModel.Name == "GrabParts" then
+                local PartToImpulse = NewModel:FindFirstChild("GrabPart")
+                if PartToImpulse and PartToImpulse:FindFirstChild("WeldConstraint") then
+                    PartToImpulse = PartToImpulse.WeldConstraint.Part1
+                    if PartToImpulse then
+                        local VelocityObject = Instance.new("BodyVelocity", PartToImpulse)
+                        VelocityObject.Name = "FlingVelocity"
+                        NewModel:GetPropertyChangedSignal("Parent"):Connect(function()
+                            if not NewModel.Parent then
+                                VelocityObject.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                VelocityObject.Velocity = Workspace.CurrentCamera.CFrame.LookVector * StrengthMultiplier
+                                Debris:AddItem(VelocityObject, 1)
+                            end
+                        end)
+                    end
+                end
+            end
+        end)
+    end
+})
+
+Tab:AddToggle({
+    Name = "Anti-Void",
+    Default = false,
+    Callback = function(state)
+        _G.AntiVoid = state
+        if state then
+            spawn(function()
+                local Players = game:GetService("Players")
+                local LocalPlayer = Players.LocalPlayer
+                while _G.AntiVoid do
+                    task.wait(0.2)
+                    local char = LocalPlayer.Character
+                    if not char then continue end
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then continue end
+                    if hrp.Position.Y < -50 then
+                        local others = {}
+                        for _, plr in pairs(Players:GetPlayers()) do
+                            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                                table.insert(others, plr)
+                            end
+                        end
+                        if #others > 0 then
+                            local randomPlayer = others[math.random(1, #others)]
+                            local targetHRP = randomPlayer.Character.HumanoidRootPart
+                            local behind = targetHRP.CFrame * CFrame.new(0, 0, 10)
+                            hrp.CFrame = CFrame.new(behind.Position)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
