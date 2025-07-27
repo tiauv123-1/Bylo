@@ -1,0 +1,100 @@
+--// KHATA HUB - AUTO TWEEN JUMP ONLY (CÓ SLIDER + ẨN GUI)
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function getHumanoid()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	return char:WaitForChild("Humanoid")
+end
+
+--// UI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "KhataJumpUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0, 30, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BorderSizePixel = 0
+frame.Name = "Main"
+frame.Active = true
+frame.Draggable = true
+
+local layout = Instance.new("UIListLayout", frame)
+layout.Padding = UDim.new(0, 5)
+
+local function Label(text)
+	local l = Instance.new("TextLabel", frame)
+	l.Size = UDim2.new(1, -10, 0, 20)
+	l.BackgroundTransparency = 1
+	l.TextColor3 = Color3.fromRGB(255,255,255)
+	l.Font = Enum.Font.Gotham
+	l.TextSize = 14
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.Text = text
+	return l
+end
+
+local function Toggle(text, callback)
+	local state = false
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(1, -10, 0, 28)
+	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.Text = "⛔ " .. text
+	btn.BorderSizePixel = 0
+
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = (state and "✅ " or "⛔ ") .. text
+		callback(state)
+	end)
+	return btn
+end
+
+local function Slider(labelText, min, max, default, callback)
+	Label("   " .. labelText .. ": " .. tostring(default))
+	local slider = Instance.new("TextBox", frame)
+	slider.Size = UDim2.new(1, -10, 0, 28)
+	slider.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	slider.TextColor3 = Color3.new(1,1,1)
+	slider.Font = Enum.Font.Gotham
+	slider.TextSize = 14
+	slider.Text = tostring(default)
+	slider.ClearTextOnFocus = false
+
+	slider.FocusLost:Connect(function()
+		local value = tonumber(slider.Text)
+		if value and value >= min and value <= max then
+			callback(value)
+		else
+			slider.Text = tostring(default)
+			callback(default)
+		end
+	end)
+	return slider
+end
+
+--// LOGIC
+local jumpEnabled = false
+local currentJump = 100
+
+Toggle("Auto Tween Nhảy Cao", function(state)
+	jumpEnabled = state
+	while jumpEnabled do
+		local hum = getHumanoid()
+		hum.UseJumpPower = true
+		hum.JumpPower = currentJump
+		task.wait(0.3)
+	end
+end)
+
+Slider("Sức bật", 50, 1000, 100, function(v)
+	currentJump = v
+end)
+
+Toggle("❌ Ẩn GUI", function(state)
+	frame.Visible = not state
+end)
