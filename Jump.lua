@@ -1,5 +1,6 @@
---// KHATA HUB - AUTO TWEEN JUMP ONLY (CÓ SLIDER + ẨN GUI)
+--// KHATA HUB - AUTO TWEEN JUMP + SPEED HACK (VỚI TEXTBOX & ẨN GUI)
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 local function getHumanoid()
@@ -12,7 +13,7 @@ local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "KhataJumpUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Size = UDim2.new(0, 250, 0, 200)
 frame.Position = UDim2.new(0, 30, 0.4, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.BorderSizePixel = 0
@@ -54,33 +55,37 @@ local function Toggle(text, callback)
 	return btn
 end
 
-local function Slider(labelText, min, max, default, callback)
-	Label("   " .. labelText .. ": " .. tostring(default))
-	local slider = Instance.new("TextBox", frame)
-	slider.Size = UDim2.new(1, -10, 0, 28)
-	slider.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	slider.TextColor3 = Color3.new(1,1,1)
-	slider.Font = Enum.Font.Gotham
-	slider.TextSize = 14
-	slider.Text = tostring(default)
-	slider.ClearTextOnFocus = false
+local function TextBoxInput(placeholderText, defaultValue, callback)
+	local box = Instance.new("TextBox", frame)
+	box.Size = UDim2.new(1, -10, 0, 28)
+	box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.Font = Enum.Font.Gotham
+	box.TextSize = 14
+	box.Text = tostring(defaultValue)
+	box.PlaceholderText = placeholderText
+	box.ClearTextOnFocus = false
 
-	slider.FocusLost:Connect(function()
-		local value = tonumber(slider.Text)
-		if value and value >= min and value <= max then
-			callback(value)
+	box.FocusLost:Connect(function()
+		local val = tonumber(box.Text)
+		if val then
+			callback(val)
 		else
-			slider.Text = tostring(default)
-			callback(default)
+			box.Text = tostring(defaultValue)
+			callback(defaultValue)
 		end
 	end)
-	return slider
+
+	return box
 end
 
---// LOGIC
+--// Biến toàn cục
 local jumpEnabled = false
+local speedEnabled = false
 local currentJump = 100
+local currentSpeed = 0
 
+--// Jump Hack
 Toggle("Auto Tween Nhảy Cao", function(state)
 	jumpEnabled = state
 	while jumpEnabled do
@@ -91,10 +96,30 @@ Toggle("Auto Tween Nhảy Cao", function(state)
 	end
 end)
 
-Slider("Sức bật", 50, 1000, 100, function(v)
+TextBoxInput("Nhập sức bật (JumpPower)", 100, function(v)
 	currentJump = v
 end)
 
+--// Speed Hack
+Toggle("Auto Tween Chạy Nhanh", function(state)
+	speedEnabled = state
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hum = char:WaitForChild("Humanoid")
+	task.spawn(function()
+		while speedEnabled and char and hum and hum.Parent do
+			if currentSpeed > 0 and hum.MoveDirection.Magnitude > 0 then
+				char:TranslateBy(hum.MoveDirection * currentSpeed * RunService.Heartbeat:Wait())
+			end
+			task.wait()
+		end
+	end)
+end)
+
+TextBoxInput("Nhập tốc độ chạy (Speed)", 5, function(v)
+	currentSpeed = v
+end)
+
+--// Ẩn GUI
 Toggle("❌ Ẩn GUI", function(state)
 	frame.Visible = not state
 end)
