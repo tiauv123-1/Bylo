@@ -1,4 +1,4 @@
---// KHATA HUB - AUTO TWEEN JUMP + SPEED HACK + ESP (với UI đơn giản)
+--// KHATA HUB - AUTO TWEEN JUMP + SPEED HACK + ESP TÊN (với UI đơn giản)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -133,10 +133,10 @@ Toggle("❌ Ẩn GUI", function(state)
 	frame.Visible = not state
 end)
 
---// ESP Toggle
+--// ESP Toggle (hiển thị tên + hoạt động với người mặc áo choàng)
 local espEnabled = false
 
-Toggle("👁️ ESP Người Khác", function(state)
+Toggle("👁️ ESP Người Khác + Tên", function(state)
 	espEnabled = state
 
 	-- Xóa ESP cũ nếu có
@@ -152,14 +152,22 @@ Toggle("👁️ ESP Người Khác", function(state)
 	local function createESP(player)
 		if player == LocalPlayer then return end
 		if player.Character and not player.Character:FindFirstChild("KHATA_ESP") then
-			local highlight = Instance.new("Highlight")
-			highlight.Name = "KHATA_ESP"
-			highlight.FillColor = Color3.fromRGB(255, 0, 0)
-			highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-			highlight.FillTransparency = 0.5
-			highlight.OutlineTransparency = 0
-			highlight.Adornee = player.Character
-			highlight.Parent = player.Character
+			local billboard = Instance.new("BillboardGui")
+			billboard.Name = "KHATA_ESP"
+			billboard.Size = UDim2.new(0, 100, 0, 20)
+			billboard.StudsOffset = Vector3.new(0, 3, 0)
+			billboard.AlwaysOnTop = true
+			billboard.Adornee = player.Character:FindFirstChild("Head") or player.Character:FindFirstChild("HumanoidRootPart")
+			billboard.Parent = player.Character
+
+			local textLabel = Instance.new("TextLabel", billboard)
+			textLabel.Size = UDim2.new(1, 0, 1, 0)
+			textLabel.BackgroundTransparency = 1
+			textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+			textLabel.TextStrokeTransparency = 0
+			textLabel.Font = Enum.Font.GothamBold
+			textLabel.TextSize = 14
+			textLabel.Text = player.Name
 		end
 	end
 
@@ -167,14 +175,14 @@ Toggle("👁️ ESP Người Khác", function(state)
 		createESP(plr)
 	end
 
-	-- Tạo ESP cho người chơi mới
+	-- ESP cho người chơi mới
 	Players.PlayerAdded:Connect(function(plr)
 		plr.CharacterAdded:Connect(function()
 			if espEnabled then task.wait(1) createESP(plr) end
 		end)
 	end)
 
-	-- Tạo lại ESP khi nhân vật respawn
+	-- ESP lại khi chết và respawn
 	for _, plr in ipairs(Players:GetPlayers()) do
 		plr.CharacterAdded:Connect(function()
 			if espEnabled then task.wait(1) createESP(plr) end
