@@ -1,4 +1,4 @@
---// KHATA HUB - AUTO TWEEN JUMP + SPEED HACK (VỚI TEXTBOX & ẨN GUI)
+--// KHATA HUB - AUTO TWEEN JUMP + SPEED HACK + ESP (với UI đơn giản)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -13,7 +13,7 @@ local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "KhataJumpUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Size = UDim2.new(0, 250, 0, 250)
 frame.Position = UDim2.new(0, 30, 0.4, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.BorderSizePixel = 0
@@ -75,7 +75,6 @@ local function TextBoxInput(placeholderText, defaultValue, callback)
 			callback(defaultValue)
 		end
 	end)
-
 	return box
 end
 
@@ -88,11 +87,20 @@ local currentSpeed = 0
 --// Jump Hack
 Toggle("Auto Tween Nhảy Cao", function(state)
 	jumpEnabled = state
-	while jumpEnabled do
-		local hum = getHumanoid()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hum = char:WaitForChild("Humanoid")
+
+	if state then
+		task.spawn(function()
+			while jumpEnabled and hum and hum.Parent do
+				hum.UseJumpPower = true
+				hum.JumpPower = currentJump
+				task.wait(0.3)
+			end
+		end)
+	else
+		hum.JumpPower = 50
 		hum.UseJumpPower = true
-		hum.JumpPower = currentJump
-		task.wait(0.3)
 	end
 end)
 
@@ -105,6 +113,7 @@ Toggle("Auto Tween Chạy Nhanh", function(state)
 	speedEnabled = state
 	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 	local hum = char:WaitForChild("Humanoid")
+
 	task.spawn(function()
 		while speedEnabled and char and hum and hum.Parent do
 			if currentSpeed > 0 and hum.MoveDirection.Magnitude > 0 then
@@ -122,4 +131,53 @@ end)
 --// Ẩn GUI
 Toggle("❌ Ẩn GUI", function(state)
 	frame.Visible = not state
+end)
+
+--// ESP Toggle
+local espEnabled = false
+
+Toggle("👁️ ESP Người Khác", function(state)
+	espEnabled = state
+
+	-- Xóa ESP cũ nếu có
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			local oldESP = plr.Character:FindFirstChild("KHATA_ESP")
+			if oldESP then oldESP:Destroy() end
+		end
+	end
+
+	if not state then return end
+
+	local function createESP(player)
+		if player == LocalPlayer then return end
+		if player.Character and not player.Character:FindFirstChild("KHATA_ESP") then
+			local highlight = Instance.new("Highlight")
+			highlight.Name = "KHATA_ESP"
+			highlight.FillColor = Color3.fromRGB(255, 0, 0)
+			highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+			highlight.FillTransparency = 0.5
+			highlight.OutlineTransparency = 0
+			highlight.Adornee = player.Character
+			highlight.Parent = player.Character
+		end
+	end
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		createESP(plr)
+	end
+
+	-- Tạo ESP cho người chơi mới
+	Players.PlayerAdded:Connect(function(plr)
+		plr.CharacterAdded:Connect(function()
+			if espEnabled then task.wait(1) createESP(plr) end
+		end)
+	end)
+
+	-- Tạo lại ESP khi nhân vật respawn
+	for _, plr in ipairs(Players:GetPlayers()) do
+		plr.CharacterAdded:Connect(function()
+			if espEnabled then task.wait(1) createESP(plr) end
+		end)
+	end
 end)
